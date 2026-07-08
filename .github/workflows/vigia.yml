@@ -2,7 +2,7 @@ name: Vigia de citas pasaporte
 
 on:
   schedule:
-    - cron: "*/6 * * * *"
+    - cron: "*/4 * * * *"
   workflow_dispatch: {}
 
 jobs:
