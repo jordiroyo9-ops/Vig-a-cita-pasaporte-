@@ -2,8 +2,9 @@ name: Vigia de citas pasaporte
 
 on:
   schedule:
+    # Corre cada 20 minutos, todos los días
     - cron: "*/4 * * * *"
-  workflow_dispatch: {}
+  workflow_dispatch: {}  # permite correrlo manualmente desde GitHub también
 
 jobs:
   revisar:
@@ -27,4 +28,6 @@ jobs:
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           ALERT_EMAIL: ${{ secrets.ALERT_EMAIL }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python vigia.py
