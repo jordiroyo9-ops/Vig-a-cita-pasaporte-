@@ -1,0 +1,30 @@
+name: Vigia de citas pasaporte
+
+on:
+  schedule:
+    - cron: "*/20 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  revisar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Instalar dependencias
+        run: |
+          pip install -r requirements.txt
+          playwright install --with-deps chromium
+
+      - name: Ejecutar vigía
+        env:
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          ALERT_EMAIL: ${{ secrets.ALERT_EMAIL }}
+        run: python vigia.py
