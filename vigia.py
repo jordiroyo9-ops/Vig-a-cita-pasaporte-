@@ -7,11 +7,31 @@ un correo de alerta si detecta cambios.
 import os
 import smtplib
 import sys
+import urllib.request
+import urllib.parse
 from email.mime.text import MIMEText
 from playwright.sync_api import sync_playwright
 
 URL = "https://www.citaconsular.es/es/hosteds/widgetdefault/2d8bebcf444f3db762074e5daef723a59/#services"
 TEXTO_SIN_CITAS = "No hay horas disponibles"
+
+
+def enviar_telegram(texto):
+    token = os.environ.get("TELEGRAM_BOT_TOKEN")
+    chat_id = os.environ.get("TELEGRAM_CHAT_ID")
+
+    if not token or not chat_id:
+        print("Telegram no configurado, se omite ese aviso.")
+        return
+
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    data = urllib.parse.urlencode({"chat_id": chat_id, "text": texto}).encode()
+
+    try:
+        with urllib.request.urlopen(url, data=data, timeout=15) as resp:
+            resp.read()
+    except Exception as e:
+        print(f"Error enviando Telegram: {e}")
 
 
 def enviar_correo(asunto, cuerpo):
@@ -34,16 +54,18 @@ def revisar_citas():
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
 
+        # Acepta automáticamente el cuadro de diálogo "Welcome/Bienvenido"
         page.on("dialog", lambda dialog: dialog.accept())
 
         page.goto(URL, wait_until="networkidle", timeout=60000)
 
+        # Clic en el botón verde "Continue / Continuar"
         try:
             page.click("text=Continue / Continuar", timeout=15000)
         except Exception:
-            pass
+            pass  # puede que ya haya pasado esa pantalla
 
-        page.wait_for_timeout(5000)
+        page.wait_for_timeout(5000)  # da tiempo a que cargue el resultado
 
         contenido = page.content()
         browser.close()
@@ -57,16 +79,20 @@ def main():
     if TEXTO_SIN_CITAS in contenido:
         print("Sigue sin haber citas disponibles. No se envía alerta.")
     else:
-        print("¡Posible cambio detectado! Enviando alerta por correo.")
+        print("¡Posible cambio detectado! Enviando alertas.")
+        mensaje = (
+            "⚠️ Posible cita disponible - Pasaporte español CDMX\n\n"
+            "El sistema de citas ya no muestra el mensaje de "
+            "'No hay horas disponibles'. Entra de inmediato a:\n\n"
+            f"{URL}\n\n"
+            "Es posible que se haya abierto un hueco. ¡Corre!"
+        )
+
         enviar_correo(
             asunto="⚠️ Posible cita disponible - Pasaporte español CDMX",
-            cuerpo=(
-                "El sistema de citas ya no muestra el mensaje de "
-                "'No hay horas disponibles'. Entra de inmediato a:\n\n"
-                f"{URL}\n\n"
-                "Es posible que se haya abierto un hueco. ¡Corre!"
-            ),
+            cuerpo=mensaje,
         )
+        enviar_telegram(mensaje)
 
 
 if __name__ == "__main__":
