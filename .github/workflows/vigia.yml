@@ -3,7 +3,7 @@ name: Vigia de citas pasaporte
 on:
   schedule:
     # Corre cada 20 minutos, todos los días
-    - cron: "*/4 * * * *"
+    - cron: "*/5 * * * *"
   workflow_dispatch: {}  # permite correrlo manualmente desde GitHub también
 
 jobs:
